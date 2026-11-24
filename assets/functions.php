@@ -176,4 +176,57 @@ function getWorkoutCount($user_id) {
     return $stmt->fetchColumn();
 }
 
+
+function getExercises() {
+
+    global $trainify;
+
+    $sql = "SELECT * FROM exercises
+            ORDER BY exercise_name ASC";
+
+    $stmt = $trainify->prepare($sql);
+
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getTotalTrainingTime($user_id) {
+
+    global $trainify;
+
+    $sql = "SELECT SUM(duration)
+            FROM workouts
+            WHERE user_id = :user_id";
+
+    $stmt = $trainify->prepare($sql);
+    $stmt->bindValue(':user_id', $user_id);
+    $stmt->execute();
+
+    return $stmt->fetchColumn() ?? 0;
+}
+
+function getPersonalRecords($user_id) {
+
+    global $trainify;
+
+    $sql = "SELECT exercises.exercise_name,
+                   MAX(sets.weight) AS max_weight
+            FROM sets
+            JOIN workout_exercises
+                ON sets.workout_exercise_id = workout_exercises.workout_exercise_id
+            JOIN exercises
+                ON workout_exercises.exercise_id = exercises.exercise_id
+            JOIN workouts
+                ON workout_exercises.workout_id = workouts.workout_id
+            WHERE workouts.user_id = :user_id
+            GROUP BY exercises.exercise_id, exercises.exercise_name";
+
+    $stmt = $trainify->prepare($sql);
+    $stmt->bindValue(':user_id', $user_id);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 ?>
